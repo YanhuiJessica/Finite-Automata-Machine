@@ -62,6 +62,30 @@ class FA:
                 rebuild.addTransition(translations[fromstate], translations[state], tostates[state])
         return [rebuild, startnum]
 
+    def getEpsilonClosure(self, findstate):
+        allstates = set()
+        states = [findstate]
+        while len(states):
+            state = states.pop()
+            allstates.add(state)
+            if state in self.transitions:
+                for tos in self.transitions[state]:
+                    if epsilon in self.transitions[state][tos] and \
+                        tos not in allstates:
+                        states.append(tos)
+        return allstates
+
+    def getMove(self, state, skey):
+        if isinstance(state, int):
+            state = [state]
+        trstates = set()
+        for st in state:
+            if st in self.transitions:
+                for tns in self.transitions[st]:
+                    if skey in self.transitions[st][tns]:
+                        trstates.add(tns)
+        return trstates
+
 class Regex2NFA:
 
     def __init__(self, regex):
@@ -191,3 +215,41 @@ class Regex2NFA:
                 self.automata.append(Regex2NFA.starstruct(a))
         self.nfa = self.automata.pop()
         self.nfa.symbol = symbol
+
+class NFA2DFA:
+
+    def __init__(self, nfa):
+        self.buildDFA(nfa)
+
+    def buildDFA(self, nfa):    # subset method 子集法
+        allstates = dict()  # visited subset
+        eclosure = dict()   # every state's ε-closure
+        state1 = nfa.getEpsilonClosure(nfa.startstate)
+        eclosure[nfa.startstate] = state1
+        cnt = 1 # the number of subset, dfa state id
+        dfa = FA(nfa.symbol)
+        dfa.setStart(cnt)
+        states = [[state1, dfa.startstate]] # unvisit
+        allstates[cnt] = state1
+        cnt += 1
+        while len(states):
+            [state, fromindex] = states.pop()
+            for ch in dfa.symbol:
+                trstates = nfa.getMove(state, ch)
+                for s in list(trstates):    # 转化为list, 相当于使用了一个临时变量
+                    if s not in eclosure:
+                        eclosure[s] = nfa.getEpsilonClosure(s)
+                    trstates = trstates.union(eclosure[s])
+                if len(trstates):
+                    if trstates not in allstates.values():
+                        states.append([trstates, cnt])
+                        allstates[cnt] = trstates
+                        toindex = cnt
+                        cnt += 1
+                    else:
+                        toindex = [k for k, v in allstates.items() if v  ==  trstates][0]
+                    dfa.addTransition(fromindex, toindex, ch)
+            for value, state in allstates.items():
+                if nfa.finalstates[0] in state:
+                    dfa.addFinal(value)
+            self.dfa = dfa
