@@ -62,6 +62,18 @@ class FA:
                 rebuild.addTransition(translations[fromstate], translations[state], tostates[state])
         return [rebuild, startnum]
 
+    def newBuildFromEqualStates(self, equivalent, pos):
+        # change states' number after merging
+        # 在最小化合并状态后修改状态的表示数字
+        rebuild = FA(self.symbol)
+        for fromstate, tostates in self.transitions.items():
+            for state in tostates:
+                rebuild.addTransition(pos[fromstate], pos[state], tostates[state])
+        rebuild.setStart(pos[self.startstate])
+        for s in self.finalstates:
+            rebuild.addFinal(pos[s])
+        return rebuild
+
     def getEpsilonClosure(self, findstate):
         allstates = set()
         states = [findstate]
@@ -253,3 +265,85 @@ class NFA2DFA:
                 if nfa.finalstates[0] in state:
                     dfa.addFinal(value)
             self.dfa = dfa
+
+    @staticmethod
+    def reNumber(states, pos):  # renumber the sets' number begin from 1
+        cnt = 1
+        change = dict()
+        for st in states:
+            if pos[st] not in change:
+                change[pos[st]] = cnt
+                cnt += 1
+            pos[st] = change[pos[st]]
+
+    def minimise(self): # segmentation 分割法, 生成新的状态集合
+        states = list(self.dfa.states)
+        tostate = dict(set()) # Move(every state, every symbol)
+
+        # initialization 预处理出每个状态经一个输入符号可以到达的下一个状态
+        for st in states:
+            for sy in self.dfa.symbol:
+                if st in tostate:
+                    if sy in tostate[st]:
+                        tostate[st][sy] = tostate[st][sy].union(self.dfa.getMove(st, sy))
+                    else:
+                        tostate[st][sy] = self.dfa.getMove(st, sy)
+                else:
+                    tostate[st] = {sy : self.dfa.getMove(st, sy)}
+                if len(tostate[st][sy]):
+                    tostate[st][sy] = tostate[st][sy].pop()
+                else:
+                    tostate[st][sy] = 0
+
+        equal = dict()  # state sets 不同分组的状态集合
+        pos = dict()    # record the set which state belongs to 记录状态对应的分组
+
+        # initialization 2 sets, nonterminal states and final states
+        equal = {1: set(), 2: set()}
+        for st in states:
+            if st not in self.dfa.finalstates:
+                equal[1] = equal[1].union(set([st]))
+                pos[st] = 1
+        for fst in self.dfa.finalstates:
+            equal[2] = equal[2].union(set([fst]))
+            pos[fst] = 2
+
+        unchecked = []
+        cnt = 3 # the number of sets
+        unchecked.extend([[equal[1], 1], [equal[2], 2]])
+        while len(unchecked):
+            [equalst, id] = unchecked.pop()
+            for sy in self.dfa.symbol:
+                diff = dict()
+                for st in equalst:
+                    if tostate[st][sy] == 0:
+                        if 0 in diff:
+                            diff[0].add(st)
+                        else:
+                            diff[0] = set([st])
+                    else:
+                        if pos[tostate[st][sy]] in diff:
+                            diff[pos[tostate[st][sy]]].add(st)
+                        else:
+                            diff[pos[tostate[st][sy]]] = set([st])
+                if len(diff) > 1:
+                    for k, v in diff.items():
+                        if k:
+                            for i in v:
+                                equal[id].remove(i)
+                                if cnt in equal:
+                                    equal[cnt] = equal[cnt].union(set([i]))
+                                else:
+                                    equal[cnt] = set([i])
+                            if len(equal[id]) == 0:
+                                equal.pop(id)
+                            for i in v:
+                                pos[i] = cnt
+                            unchecked.append([equal[cnt], cnt])
+                            cnt += 1
+                    break
+        if len(equal) == len(states):
+            self.minDFA = self.dfa
+        else:
+            NFA2DFA.reNumber(states, pos)
+            self.minDFA = self.dfa.newBuildFromEqualStates(equal, pos)
