@@ -1,5 +1,5 @@
 from collections import defaultdict
-from graphviz import Digraph
+from graphviz import Digraph, render
 
 star = '*'
 line = '|'
@@ -99,7 +99,7 @@ class FA:
         return trstates
 
     def display(self, fname, pname):
-        fa = Digraph(pname, filename = fname)
+        fa = Digraph(pname, filename = fname, format = 'png')
         fa.attr(rankdir='LR')
 
         fa.attr('node', shape = 'doublecircle')
@@ -117,8 +117,7 @@ class FA:
         fa.attr('node', shape = 'point')
         fa.edge('', 's' + str(self.startstate))
 
-        render('dot', 'png', fname) # png
-        # fa.view() # pdf
+        fa.view()
 
 class Regex2NFA:
 
@@ -378,3 +377,39 @@ class NFA2DFA:
         else:
             NFA2DFA.reNumber(states, pos)
             self.minDFA = self.dfa.newBuildFromEqualStates(equal, pos)
+
+    def Analysis(self, string):
+        string = string.replace('@', epsilon)
+        curst = self.dfa.startstate
+        for ch in string:
+            if ch == epsilon:
+                continue
+            st = list(self.dfa.getMove(curst, ch))
+            if len(st) == 0:
+                return False
+            curst = st[0]
+        if curst in self.dfa.finalstates:
+            return True
+        return False
+
+if __name__ == '__main__':
+
+    # using example
+    regex = input('Please input the regex: ')
+    a = Regex2NFA(regex)
+    a.displayNFA()
+
+    b = NFA2DFA(a.nfa)
+    b.displayDFA()
+    b.minimise()
+    b.displayminDFA()
+
+    while True:
+        try:
+            s = input('Please input a word to analysis (take @ as ε): ')
+            if b.Analysis(s):
+                print('Accepted')
+            else:
+                print('Unaccepted')
+        except EOFError:
+            break
