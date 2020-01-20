@@ -98,11 +98,36 @@ class FA:
                         trstates.add(tns)
         return trstates
 
+    def display(self, fname, pname):
+        fa = Digraph(pname, filename = fname)
+        fa.attr(rankdir='LR')
+
+        fa.attr('node', shape = 'doublecircle')
+        for fst in self.finalstates:
+            fa.node('s' + str(fst))
+
+        fa.attr('node', shape = 'circle')
+        for fromstate, tostates in self.transitions.items():
+            for state in tostates:
+                tmp = ''
+                for s in tostates[state]:
+                    tmp += s + '|'
+                fa.edge('s' + str(fromstate), 's' + str(state), label = tmp[:-1])
+
+        fa.attr('node', shape = 'point')
+        fa.edge('', 's' + str(self.startstate))
+
+        render('dot', 'png', fname) # png
+        # fa.view() # pdf
+
 class Regex2NFA:
 
     def __init__(self, regex):
         self.regex = regex
         self.buildNFA()
+
+    def displayNFA(self):
+        self.nfa.display('nfa.gv', 'nondeterministic_finite_state_machine')
 
     @staticmethod
     def getPriority(op):
@@ -232,6 +257,12 @@ class NFA2DFA:
 
     def __init__(self, nfa):
         self.buildDFA(nfa)
+
+    def displayDFA(self):
+        self.dfa.display('dfa.gv', 'deterministic_finite_state_machine')
+
+    def displayminDFA(self):
+        self.minDFA.display('mindfa.gv', 'min_deterministic_finite_state_machine')
 
     def buildDFA(self, nfa):    # subset method 子集法
         allstates = dict()  # visited subset
