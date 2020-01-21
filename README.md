@@ -1,5 +1,15 @@
 ## Finite-Automata-Machine
 
+### Overview
+
+This is a python program to construct ε-NFA, DFA, and minimised DFA from a given regex. After constructing DFA, it can judge a given word whether it matches the regex.
+
+### Requirements
+
+- Python 3
+- python-graphviz
+  - Users can install it by running `pip install graphviz`
+
 ### Regex -> NFA
 
 - `Regex2NFA.basicstruct`<br>
