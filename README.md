@@ -15,7 +15,7 @@ This is a python program to construct ε-NFA, DFA, and minimised DFA from a give
 git clone https://github.com/YanhuiJessica/Finite-Automata-Machine.git
 cd Finite-Automata-Machine/
 pip3 install -r requirements.txt
-python3 lexical-analysis.py
+python3 lexical_analysis.py
 ```
 
 ### Regex -> NFA
