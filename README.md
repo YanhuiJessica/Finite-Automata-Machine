@@ -8,7 +8,15 @@ This is a python program to construct ε-NFA, DFA, and minimised DFA from a give
 
 - Python 3
 - python-graphviz
-  - Users can install it by running `pip install graphviz`
+
+#### Install 
+
+```bash
+git clone https://github.com/YanhuiJessica/Finite-Automata-Machine.git
+cd Finite-Automata-Machine/
+pip3 install -r requirements.txt
+python3 lexical-analysis.py
+```
 
 ### Regex -> NFA
 

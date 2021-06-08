@@ -1,5 +1,7 @@
+#-*- coding: utf-8 -*-
+
 from collections import defaultdict
-from graphviz import Digraph, render
+from graphviz import Digraph
 
 star = '*'
 line = '|'
